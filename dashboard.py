@@ -26,7 +26,10 @@ text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1, chunk_overla
 documents = text_splitter.split_documents(raw_documents)
 
 # Free, runs locally - no API key and no cost.
-embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embedding_model = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    show_progress=True
+)
 db_books = Chroma.from_documents(documents, embedding_model)
 
 
@@ -89,7 +92,21 @@ def recommend_books(
 categories = ["All"] + sorted(books["simple_categories"].unique())
 tones = ["All"] + ["Happy", "Surprising", "Angry", "Suspenseful", "Sad"]
 
-with gr.Blocks(theme = gr.themes.Glass()) as dashboard:
+# Gradio's Gallery caption (in the enlarged preview) is meant to truncate
+# long text with "..." but only does so if its width is constrained. By
+# default it just grows to fit the text, which is why long descriptions
+# were spilling off both sides of the screen instead of being clipped.
+
+
+custom_css = """
+.caption {
+    align-self: stretch !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+"""
+
+with gr.Blocks(theme = gr.themes.Glass(), css = custom_css) as dashboard:
     gr.Markdown("# Semantic book recommender")
 
     with gr.Row():
